@@ -67,7 +67,7 @@ function detect(input, br, gzip) {
  * @returns The Connect/Express middleware function, which always calls `next()`.
  * @param {string} pathRoot The root directory for serving files in the route in which this middleware will be used.
  */
-function setHeader(pathRoot) {
+function serveHeader(pathRoot) {
   return (
     /**@type {import('http').IncomingMessage}*/ req,
     /**@type {import('http').ServerResponse}*/ res,
@@ -87,4 +87,4 @@ function setHeader(pathRoot) {
   };
 }
 
-module.exports = { setHeader, detect };
+module.exports = { serveHeader, detect };

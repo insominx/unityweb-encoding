@@ -9,14 +9,14 @@ const
   unitywebEncoding = require('unityweb-encoding');
 // pathRoot: the root dir of server files
 connect()
-  .use(unitywebEncoding.setHeader(pathRoot))
+  .use(unitywebEncoding.serveHeader(pathRoot))
   .use(serveStatic(pathRoot))
   .listen(8000);
 ```
 
 ## API
 
-### setHeader(pathRoot)
+### serveHeader(pathRoot)
 Creates a Connect/Express middleware that applies proper Content-Encoding to .unityweb (Unity WebGL) files.
 It reads the first bytes of the file to detect if it's brotli, gzip or uncompressed.
 
