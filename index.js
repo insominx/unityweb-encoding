@@ -15,7 +15,7 @@ function isInsidePath(root, subpath) {
 }
 function bytesStartWith(
   /**@type {Buffer}*/ buf,
-  /**@type {Buffer}*/ prefix
+  /**@type {Buffer}*/ prefix,
 ) {
   const n = prefix.byteLength;
   return buf.byteLength >= n && prefix.compare(buf, 0, n) == 0;
@@ -23,7 +23,7 @@ function bytesStartWith(
 function readStaticFileBytesSync(
   /**@type {string}*/ pathRoot,
   /**@type {import('http').IncomingMessage}*/ req,
-  /**@type {number}*/ nbytes
+  /**@type {number}*/ nbytes,
 ) {
   const pathFile = path.resolve(pathRoot, '.' + req.url);
   // ensure URL can't have ../ relative paths to outside the root
@@ -71,7 +71,7 @@ function serveHeader(pathRoot) {
   return (
     /**@type {import('http').IncomingMessage}*/ req,
     /**@type {import('http').ServerResponse}*/ res,
-    /**@type {(err?: any) => void}*/ next
+    /**@type {(err?: any) => void}*/ next,
   ) => {
     if (/\.unityweb$/i.test(/**@type {string}*/(req.url))) {
       const aencs = (req.headers['accept-encoding'] || '').toString().split(/\s*,\s*/g);
