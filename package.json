@@ -1,0 +1,12 @@
+{
+  "name": "unityweb-encoding",
+  "version": "2017.1.0",
+  "author": "Alfish <alfishsoftware@gmail.com>",
+  "license": "BSD-3-Clause",
+  "description": "Connect/Express middleware to apply proper Content-Encoding to .unityweb (Unity WebGL) files.",
+  "repository": "bitbucket:alfish/unityweb-encoding",
+  "main": "index.js",
+  "scripts": {},
+  "devDependencies": {},
+  "dependencies": {}
+}
