@@ -20,7 +20,7 @@ function bytesStartWith(
   const n = prefix.byteLength;
   return buf.byteLength >= n && prefix.compare(buf, 0, n) == 0;
 }
-function readStaticFileBytesSync(
+function readStaticFileBytes(
   /**@type {string}*/ pathRoot,
   /**@type {import('http').IncomingMessage}*/ req,
   /**@type {number}*/ nbytes,
@@ -30,11 +30,7 @@ function readStaticFileBytesSync(
   if (!isInsidePath(pathRoot, pathFile))
     return null;
   try {
-    const buf = Buffer.alloc(nbytes);
-    const fd = fs.openSync(pathFile, 'r');
-    fs.readSync(fd, buf, 0, nbytes, 0);
-    fs.closeSync(fd);
-    return buf;
+    return fs.createReadStream(pathFile, { end: nbytes - 1, highWaterMark: nbytes });
   } catch {
     return null;
   }
@@ -73,17 +69,34 @@ function serveHeader(pathRoot) {
     /**@type {import('http').ServerResponse}*/ res,
     /**@type {(err?: any) => void}*/ next,
   ) => {
-    if (/\.unityweb$/i.test(/**@type {string}*/(req.url))) {
-      const aencs = (req.headers['accept-encoding'] || '').toString().split(/\s*,\s*/g);
-      const br = aencs.includes('br'), gzip = aencs.includes('gzip');
-      if (br || gzip) {
-        const file = readStaticFileBytesSync(pathRoot, req, gzip ? 301 : 39); // 10 + 255 + 36
-        const enc = detect(file, br, gzip);
-        if (enc)
-          res.setHeader('Content-Encoding', enc);
-      }
+    if (!/\.unityweb$/i.test(/**@type {string}*/(req.url))) {
+      next(); return; // not .unityweb file, handle normally
     }
-    next();
+    /** parsed acceptances: map encoding -> quality
+     * @type {{[enc: string]: number}}
+     */
+    const encs = { br: 0, gzip: 0, identity: 1 };
+    /** list of encoding acceptances */
+    const aencs = `${req.headers['accept-encoding'] || ''}`.split(/\s*,\s*/g, 64);
+    for (const aenc of aencs) {
+      const [, enc, q] = /^([^;]+)(?:\s*;\s*q=([01](?:\.\d*)?))?$/.exec(aenc) || []; // parse each entry
+      if (enc) encs[enc] = q ? +q || 0 : 1; // set its quality or 1 if not specified
+    }
+    if (!encs.br && !encs.gzip) {
+      next(); return; // br and gzip are not acceptable; handle normally
+    }
+    const s = readStaticFileBytes(pathRoot, req, encs.gzip ? 301 : 39); // 10 + 255 + 36
+    if (!s) {
+      next(); return; // path or other problem; handle normally
+    }
+    s.once('data', headerBytes => {
+      const enc = detect(headerBytes, !!encs.br, !!encs.gzip); // detect encoding or null if not an accepted encoding
+      if (enc)
+        res.setHeader('Content-Encoding', enc); // apply detected encoding, which is acceptable; else handle normally
+      next();
+    }).once('error', _err => {
+      next(); // file not found or other io problem, handle normally
+    });
   };
 }
 
